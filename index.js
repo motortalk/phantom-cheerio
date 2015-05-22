@@ -20,6 +20,8 @@ module.exports = function (phantomSettings) {
 };
 
 var PhantomCheerio = function (phantomSettings) {
+
+    var _phantomInstance;
     var _phantomSettings = phantomSettings ? phantomSettings : {};
 
     this.open = function (url, callback, done) {
@@ -68,8 +70,8 @@ var PhantomCheerio = function (phantomSettings) {
 
     var getPhantomInstance = function () {
         return new Promise(function (resolve, reject) {
-            if (_instance) {
-                resolve(_instance)
+            if (_phantomInstance) {
+                resolve(_phantomInstance)
             } else {
                 createInstance()
                     .then(function (instance) {
@@ -84,7 +86,7 @@ var PhantomCheerio = function (phantomSettings) {
     var createInstance = function () {
         return new Promise(function (resolve) {
             phantom.create(function (phantomInstance) {
-                _instance = phantomInstance;
+                _phantomInstance = phantomInstance;
                 resolve(phantomInstance);
             }, {parameters: {'ignore-ssl-errors': 'yes'}});
         });

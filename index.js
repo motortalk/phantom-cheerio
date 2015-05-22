@@ -11,16 +11,12 @@ var PhantomCheerio = function (phantomSettings) {
     var _phantomInstance;
     var _phantomSettings = phantomSettings ? phantomSettings : {};
 
-    this.open = function (url, callback, done) {
+    this.open = function (url, callback) {
         openAndJquerify(url)
             .then(function (result) {
-                try {
-                    callback(result.$, result.response);
-                } catch (err) {
-                    done(err);
-                }
-            }, function(error){
-                done(error);
+                callback(result.$, result.response);
+            }, function (error) {
+                console.log(error);
             });
     };
 

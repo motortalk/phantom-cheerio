@@ -2,19 +2,6 @@ var phantom = require('phantom');
 var cheerio = require('cheerio');
 var Promise = require('promise');
 
-var _instance;
-
-var originalIt = it;
-it = function (title, cb) {
-    originalIt(title, function (done) {
-        try {
-            cb(done);
-        } catch (err) {
-            done(err);
-        }
-    });
-};
-
 module.exports = function (phantomSettings) {
     return new PhantomCheerio(phantomSettings);
 };

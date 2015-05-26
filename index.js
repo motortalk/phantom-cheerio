@@ -8,7 +8,6 @@ module.exports = function (phantomSettings) {
 
 var PhantomCheerio = function (phantomSettings) {
 
-    var _phantomInstance;
     var _phantomSettings = phantomSettings ? phantomSettings : {};
 
     this.open = function (url, callback) {
@@ -24,57 +23,37 @@ var PhantomCheerio = function (phantomSettings) {
         return new Promise(function (resolve, reject) {
             var response;
             var pageInstance;
-            createPageInstance()
+            var phantomInstance;
+            createPhantomInstance()
+                .then(function(instance){ phantomInstance = instance; return createPageInstance(phantomInstance);})
                 .then(function (instance) { pageInstance = instance; return openUrl(pageInstance, url); }, function (error) { reject(error); })
                 .then(function (result) { response = result.response; return getJqueryfiedContent(pageInstance); }, function (error) { reject(error); })
-                .then(function ($) { pageInstance.close(); resolve({$ : $, response : response}); }, function (error) { reject(error) });
+                .then(function ($) { pageInstance.close(); phantomInstance.exit(); resolve({$ : $, response : response}); }, function (error) { reject(error) });
         });
     };
 
-    var createPageInstance = function () {
-        return new Promise(function (resolve, reject) {
-            getPhantomInstance()
-                .then(function (phantomInstance) {
-                    phantomInstance.createPage(function (page) {
-                        if(_phantomSettings) {
-                            for(var key in _phantomSettings) {
-                                if(_phantomSettings.hasOwnProperty(key)) {
-                                    page.set(key, _phantomSettings[key]);
-                                }
-                            }
+    var createPageInstance = function (phantomInstance) {
+        return new Promise(function (resolve) {
+            phantomInstance.createPage(function (page) {
+                if (_phantomSettings) {
+                    for (var key in _phantomSettings) {
+                        if (_phantomSettings.hasOwnProperty(key)) {
+                            page.set(key, _phantomSettings[key]);
                         }
-                        resolve(page);
-                    });
-                }, function (error) {
-                    reject(error);
-                });
+                    }
+                }
+                resolve(page);
+            });
         });
     };
 
-    var getPhantomInstance = function () {
-        return new Promise(function (resolve, reject) {
-            if (_phantomInstance) {
-                resolve(_phantomInstance)
-            } else {
-                createInstance()
-                    .then(function (instance) {
-                        resolve(instance);
-                    }, function (error) {
-                        reject(error);
-                    })
-            }
-        });
-    };
-
-    var createInstance = function () {
+    var createPhantomInstance = function () {
         return new Promise(function (resolve) {
             phantom.create(function (phantomInstance) {
-                _phantomInstance = phantomInstance;
                 resolve(phantomInstance);
             }, {parameters: {'ignore-ssl-errors': 'yes'}});
         });
     };
-
 
     var openUrl = function (pageInstance, url) {
         return new Promise(function (resolve, reject) {

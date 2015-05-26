@@ -1,6 +1,6 @@
 {
   "name": "phantom-cheerio",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Framework for testing the structure of websites.",
   "main": "index.js",
   "scripts": {

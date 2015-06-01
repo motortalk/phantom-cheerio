@@ -1,9 +1,10 @@
 {
   "name": "phantom-cheerio",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Framework for testing the structure of websites.",
   "main": "index.js",
   "scripts": {
+    "prepublish" : "npm test",
     "test": "node_modules/mocha/bin/mocha test/test.js"
   },
   "keywords": [

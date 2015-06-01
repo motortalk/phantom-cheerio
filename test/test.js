@@ -32,6 +32,7 @@ describe('test phantom-cheerio options.', function () {
     it('should open url with javascript disabled', function (done) {
         phantomCheerioJsDisabled.open('https://www.npmjs.com/', function ($) {
             assert.equal($('#notification-banner').css('display'), 'none', 'notification banner is not visible with js disabled.');
+            phantomCheerioJsDisabled.close();
             done();
         });
     });

@@ -1,12 +1,16 @@
 var phantom = require('phantom');
 var cheerio = require('cheerio');
 var Promise = require('promise');
+var querystring = require('querystring');
 
 module.exports = function (phantomSettings) {
     return new PhantomCheerio(phantomSettings);
 };
 
 var PhantomCheerio = function (phantomSettings) {
+
+    var _pageInstance;
+    var _phantomInstance;
 
     var _phantomSettings = phantomSettings ? phantomSettings : {};
 
@@ -19,112 +23,136 @@ var PhantomCheerio = function (phantomSettings) {
             });
     };
 
-    var openAndJquerify = function (url) {
+    this.post = function (url, postData, callback) {
         return new Promise(function (resolve, reject) {
-            var response;
-            var pageInstance;
-            var phantomInstance;
-            createPhantomInstance()
-                .then(function(instance){ phantomInstance = instance; return createPageInstance(phantomInstance);})
-                .then(function (instance) { pageInstance = instance; return openUrl(pageInstance, url); }, function (error) { reject(error); })
-                .then(function (result) { response = result.response; return getJqueryfiedContent(pageInstance); }, function (error) { reject(error); })
-                .then(function ($) { pageInstance.close(); phantomInstance.exit(); resolve({$ : $, response : response}); }, function (error) { reject(error) });
+            getPhantomInstance()
+                .then(createPageInstance, function(error){ reject(error); })
+                .then(function(){ return post(url, postData); }, function (error){ reject(error); })
+                .then(function (status) { _pageInstance.close(); callback(status); }, function (error) { reject(error) });
         });
     };
 
-    var createPageInstance = function (phantomInstance) {
+    this.close = function () {
+        if(_phantomInstance) {
+            _phantomInstance.exit();
+        }
+    };
+
+    var post = function (url, postData) {
+        return new Promise(function (resolve, reject) {
+            try {
+                var postBody = querystring.stringify(postData);
+                _pageInstance.open(url, 'POST', postBody, function (status) {
+                    resolve(status);
+                });
+            } catch (e) {
+                reject(e);
+            }
+        });
+    };
+
+    var openAndJquerify = function (url) {
+        return new Promise(function (resolve, reject) {
+            var pageResponse;
+            getPhantomInstance()
+                .then(createPageInstance, function(error){ reject(error); })
+                .then(function() {return openUrl(url); }, function (error) { reject(error); })
+                .then(function (response) { pageResponse = response; return getJqueryfiedContent(); }, function (error) { reject(error); })
+                .then(function ($) { _pageInstance.close(); resolve({$ : $, response : pageResponse}); }, function (error) { reject(error) });
+        });
+    };
+
+    var createPageInstance = function () {
         return new Promise(function (resolve) {
-            phantomInstance.createPage(function (page) {
-                if (_phantomSettings) {
-                    for (var key in _phantomSettings) {
-                        if (_phantomSettings.hasOwnProperty(key)) {
-                            page.set(key, _phantomSettings[key]);
+            try {
+                _phantomInstance.createPage(function (page) {
+                    if (_phantomSettings) {
+                        for (var key in _phantomSettings) {
+                            if (_phantomSettings.hasOwnProperty(key)) {
+                                page.set(key, _phantomSettings[key]);
+                            }
                         }
                     }
-                }
-                resolve(page);
-            });
+                    _pageInstance = page;
+                    resolve();
+                });
+            } catch (e) {
+                reject(e);
+            }
+        });
+    };
+
+    var getPhantomInstance = function () {
+        return new Promise(function (resolve, reject) {
+            if (_phantomInstance) {
+                resolve();
+            } else {
+                createPhantomInstance()
+                    .then(function () {
+                        resolve();
+                    }, function (err) {
+                        reject(err);
+                    });
+            }
         });
     };
 
     var createPhantomInstance = function () {
         return new Promise(function (resolve) {
             phantom.create(function (phantomInstance) {
-                resolve(phantomInstance);
+                _phantomInstance = phantomInstance;
+                _phantomInstance.set('onError', function (msg) {
+                    console.log('PHANTOM ERROR: ' + msg);
+                });
+                resolve();
             }, {parameters: {'ignore-ssl-errors': 'yes'}});
         });
     };
 
-    var openUrl = function (pageInstance, url) {
+    var openUrl = function (url) {
         return new Promise(function (resolve, reject) {
             var _response;
             var targetUrl = url;
 
             //FIXME just a workaround for nginx rewrites
-            pageInstance.set('onNavigationRequested', function (url) {
+            _pageInstance.set('onNavigationRequested', function (url) {
                 targetUrl = url;
             });
 
-            pageInstance.set('onUrlChanged', function (changedUrl) {
+            _pageInstance.set('onUrlChanged', function (changedUrl) {
                 targetUrl = changedUrl;
             });
 
-            pageInstance.onResourceRequested(
-                function (requestData, request, pageRequestUrl) {
-                    var resourceUrl = requestData.url;
-                    var rootDomainRegex = /^https?\:\/\/[^\.]*.([^\/?#]+)(?:[\/?#]|$)/i;
-                    var pageRequestUrlMatches = pageRequestUrl.match(rootDomainRegex);
-                    var pageRequestRootDomain = pageRequestUrlMatches && pageRequestUrlMatches[1];
-                    var resourceUrlMatches = resourceUrl.match(rootDomainRegex);
-                    var resourceRootDomain = resourceUrlMatches && resourceUrlMatches[1];
-                    if (resourceRootDomain !== pageRequestRootDomain && resourceUrl.indexOf('data:image') < 0) {
-                        request.abort();
-                    }
-                },
-                function (requestData) {
-                }, url);
-
-
-            pageInstance.set('onResourceReceived', function (response) {
+            _pageInstance.set('onResourceReceived', function (response) {
                 if (response.url === targetUrl) {
                     _response = response;
                 }
             });
 
-            pageInstance.set('onResourceError', function (resourceError) {
-                if (!isExternalRequest(url, resourceError.url)) {
-                    reject(new Error('URL:' + resourceError.url + ', Error code: ' + resourceError.errorCode + '. Description: ' + resourceError.errorString));
-                }
+            _pageInstance.set('onResourceError', function (resourceError) {
+                console.log(resourceError);
             });
 
-            pageInstance.set('onResourceTimeout', function (request) {
+            _pageInstance.set('onResourceTimeout', function (request) {
                 reject(new Error('URL:' + request.url + ', Error code: ' + request.errorCode + '. Description: ' + request.errorString));
             });
 
-            pageInstance.open(url, function(){
-                resolve({
-                    pageInstance: pageInstance,
-                    response: _response
-                });
+            _pageInstance.open(url, function (status) {
+                if(status === 'success') {
+                    resolve(_response);
+                } else {
+                    reject(new Error('Failed to open ' + url));
+                }
             });
         });
     };
 
-    var getJqueryfiedContent = function (pageInstance) {
+    var getJqueryfiedContent = function () {
         return new Promise(function (resolve) {
-            pageInstance.getContent(function (content) {
+            _pageInstance.getContent(function (content) {
                 resolve(cheerio.load(content));
             });
         });
-    };
-
-    var isExternalRequest = function (requestedPageUrl, resourceRequestUrl) {
-        var rootDomainRegex = /^https?\:\/\/[^\.]*.([^\/?#]+)(?:[\/?#]|$)/i;
-        var pageRequestUrlMatches = requestedPageUrl.match(rootDomainRegex);
-        var pageRequestRootDomain = pageRequestUrlMatches && pageRequestUrlMatches[1];
-        var resourceUrlMatches = resourceRequestUrl.match(rootDomainRegex);
-        var resourceRootDomain = resourceUrlMatches && resourceUrlMatches[1];
-        return resourceRootDomain !== pageRequestRootDomain && resourceRequestUrl.indexOf('data:image') < 0
     };
 
 };

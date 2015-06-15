@@ -1,5 +1,7 @@
 #phantom-cheerio
 
+[![Build Status](https://travis-ci.org/motortalk/phantom-cheerio.svg?branch=master)](https://travis-ci.org/motortalk/phantom-cheerio)
+
 ## Installation
 
     npm install phantom-cheerio

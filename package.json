@@ -18,12 +18,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FrederikS/phantom-cheerio.git"
+    "url": "git+https://github.com/motortalk/phantom-cheerio.git"
   },
   "bugs": {
-    "url": "https://github.com/FrederikS/phantom-cheerio/issues"
+    "url": "https://github.com/motortalk/phantom-cheerio/issues"
   },
-  "homepage": "https://github.com/FrederikS/phantom-cheerio#readme",
+  "homepage": "https://github.com/motortalk/phantom-cheerio#readme",
   "dependencies": {
     "cheerio": "^0.19.0",
     "phantom": "^0.7.2",

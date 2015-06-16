@@ -9,7 +9,7 @@
 ##Examples with mocha 
 
     'use strict';
-    var phantomCheerio = require('../index')();
+    var phantomCheerio = require('phantom-cheerio')();
     var assert = require('assert');
     
     describe('test phantom-cheerio basics.', function () {
@@ -37,7 +37,7 @@
     
         this.timeout(10000); //npmjs.com is too slow for default timeout
     
-        var phantomCheerioJsDisabled = require('../index')({"settings.javascriptEnabled": false});
+        var phantomCheerioJsDisabled = require('phantom-cheerio')({"settings.javascriptEnabled": false});
     
         it('should open url with javascript disabled', function (done) {
             phantomCheerioJsDisabled.open('https://www.npmjs.com/', function ($) {
@@ -69,7 +69,7 @@ Sessions are available by using the same phantom-instance. Calling the method cl
     
         it('instance should use existing session', function (done) {
     
-            var phantomCheerioWithUA = require('../index')({
+            var phantomCheerioWithUA = require('phantom-cheerio')({
                 "settings.userAgent" : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36'
             });
     

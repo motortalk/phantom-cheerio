@@ -4,7 +4,7 @@
   "description": "Framework for testing the structure of websites.",
   "main": "index.js",
   "scripts": {
-    "prepublish" : "npm test",
+    "prepublish": "npm test",
     "test": "node_modules/mocha/bin/mocha test/test.js"
   },
   "keywords": [
@@ -25,11 +25,11 @@
   },
   "homepage": "https://github.com/motortalk/phantom-cheerio#readme",
   "dependencies": {
-    "cheerio": "^0.19.0",
-    "phantom": "^0.7.2",
-    "promise": "^7.0.1"
+    "cheerio": "^0.20.0",
+    "phantom": "^2.0.10",
+    "promise": "^7.1.1"
   },
   "devDependencies": {
-    "mocha": "^2.2.5"
+    "mocha": "^2.4.5"
   }
 }
